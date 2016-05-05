@@ -14,7 +14,8 @@ var sqlite3 = require('sqlite3'),
 	Cookie = tough.Cookie,
 	path,
 	ITERATIONS,
-	dbClosed = false;
+	dbClosed = false,
+	matchPath = false;
 
 if (process.platform === 'darwin') {
 
@@ -291,7 +292,7 @@ var getCookies = function (uri, format, callback) {
 						return;
 					}
 
-					if (!tough.pathMatch(path, cookie.path)) {
+					if (matchPath && !tough.pathMatch(path, cookie.path)) {
 						return;
 					}
 
