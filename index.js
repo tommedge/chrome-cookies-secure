@@ -18,7 +18,8 @@ var sqlite3 = require('sqlite3'),
 
 if (process.platform === 'darwin') {
 
-	path = process.env.HOME + '/Library/Application Support/Google/Chrome/Default/Cookies';
+	// path = process.env.HOME + '/Library/Application Support/Google/Chrome/Default/Cookies';
+	path = process.env.HOME + '/Library/Application Support/Google/Chrome/Profile 1/Cookies';
 	ITERATIONS = 1003;
 
 } else if (process.platform === 'linux') {
