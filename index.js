@@ -14,30 +14,27 @@ var sqlite3 = require('sqlite3'),
 	Cookie = tough.Cookie,
 	path,
 	ITERATIONS,
+	KEYLENGTH,
 	dbClosed = false,
-	matchPath = false;
-
-if (process.platform === 'darwin') {
-
-	// path = process.env.HOME + '/Library/Application Support/Google/Chrome/Default/Cookies';
-	path = process.env.HOME + '/Library/Application Support/Google/Chrome/Profile 1/Cookies';
-	ITERATIONS = 1003;
-
-} else if (process.platform === 'linux') {
-
-	path = process.env.HOME + '/.config/google-chrome/Default/Cookies';
-	ITERATIONS = 1;
-
-} else {
-
-	console.error('Only Mac and Linux are supported.');
-	process.exit();
-
-}
-
-var	KEYLENGTH = 16,
+	matchPath = false,
+	KEYLENGTH = 16,
 	SALT = 'saltysalt',
+	db;
+
+function init(profileName) {
+	if (process.platform === 'darwin') {
+		path = process.env.HOME + '/Library/Application Support/Google/Chrome/' + profileName + '/Cookies';
+		ITERATIONS = 1003;
+	} else if (process.platform === 'linux') {
+		path = process.env.HOME + '/.config/google-chrome/' + profileName + '/Cookies';
+		ITERATIONS = 1;
+	} else {
+		console.error('Only Mac and Linux are supported.');
+		process.exit();
+	}
+	
 	db = new sqlite3.Database(path);
+}
 
 // Decryption based on http://n8henrie.com/2014/05/decrypt-chrome-cookies-with-python/
 // Inspired by https://www.npmjs.org/package/chrome-cookies
@@ -101,7 +98,7 @@ function convertChromiumTimestampToUnix(timestamp) {
 
 }
 
-function convertRawToNetscapeCookieFileFormat(cookies, domain) {
+var convertRawToNetscapeCookieFileFormat = function (cookies, domain) {
 
 	var out = '',
 		cookieLength = cookies.length;
@@ -132,7 +129,7 @@ function convertRawToNetscapeCookieFileFormat(cookies, domain) {
 
 }
 
-function convertRawToHeader(cookies) {
+var convertRawToHeader = function (cookies) {
 
 	var out = '',
 		cookieLength = cookies.length;
@@ -150,7 +147,7 @@ function convertRawToHeader(cookies) {
 
 }
 
-function convertRawToJar(cookies, uri) {
+var convertRawToJar = function (cookies, uri) {
 
 	var jar = new request.jar();
 
@@ -165,7 +162,7 @@ function convertRawToJar(cookies, uri) {
 
 }
 
-function convertRawToSetCookieStrings(cookies) {
+var convertRawToSetCookieStrings = function (cookies) {
 
 	var cookieLength = cookies.length,
 		strings = [];
@@ -197,7 +194,7 @@ function convertRawToSetCookieStrings(cookies) {
 
 }
 
-function convertRawToObject(cookies) {
+var convertRawToObject = function(cookies) {
 
 	var out = {};
 
@@ -219,8 +216,9 @@ function convertRawToObject(cookies) {
 	object - key/value of name/value pairs, overlapping names are overwritten
 
  */
-var getCookies = function (uri, format, callback) {
-
+var getCookies = function (profileName, uri, format, callback) {
+	init(profileName);
+	
 	if (format instanceof Function) {
 		callback = format;
 		format = null;
@@ -318,6 +316,10 @@ var getCookies = function (uri, format, callback) {
 						output = convertRawToHeader(validCookies);
 						break;
 
+					case 'raw':
+						output = validCookies;
+						break;
+						
 					case 'object':
 						/* falls through */
 					default:
@@ -343,4 +345,9 @@ var getCookies = function (uri, format, callback) {
 
 module.exports = {
 	getCookies: getCookies,
+	convertRawToObject: convertRawToObject,
+	convertRawToSetCookieStrings: convertRawToSetCookieStrings,
+	convertRawToJar: convertRawToJar,
+	convertRawToHeader: convertRawToHeader,
+	convertRawToNetscapeCookieFileFormat: convertRawToNetscapeCookieFileFormat
 };
